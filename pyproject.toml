@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "claude-teams"
-version = "0.1.1"
-description = "MCP server for orchestrating Claude Code agent teams"
+version = "0.1.2"
+description = "MCP server for orchestrating Claude Code agent teams (with Codex CLI support)"
 requires-python = ">=3.12"
 license = "MIT"
 dependencies = [
@@ -23,7 +23,7 @@ dev = [
 claude-teams = "claude_teams.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/claude_teams"]
+packages = ["claude_teams"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
