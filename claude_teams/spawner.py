@@ -29,6 +29,33 @@ Start by reading your inbox for instructions.
 
 {prompt}"""
 
+_CODEX_PROMPT_WRAPPER = """\
+You are team member '{name}' on team '{team_name}'.
+
+You do NOT have MCP tools. Instead, communicate via the filesystem inbox directly.
+
+INBOX LOCATIONS:
+- Your inbox (read instructions from here): {inbox_path}
+- Team-lead inbox (send replies here): {lead_inbox_path}
+
+HOW TO READ YOUR INBOX:
+Read the JSON file at: {inbox_path}
+It is a JSON array of message objects with fields: from, text, timestamp, read, summary.
+Unread messages have "read": false.
+
+HOW TO SEND A MESSAGE TO TEAM-LEAD:
+Append a JSON object to the array in: {lead_inbox_path}
+Use this exact format (replace placeholders):
+{{"from": "{name}", "text": "<your message>", "timestamp": "<ISO8601 UTC timestamp>", "read": false, "summary": "<one line summary>"}}
+
+IMPORTANT: When appending, read the existing JSON array first, append your object, then write the full updated array back. Never truncate existing messages.
+
+Start by reading your inbox for instructions, then carry out the task.
+
+---
+
+{prompt}"""
+
 
 def discover_harness_binary(name: str) -> str | None:
     return shutil.which(name)
@@ -138,11 +165,20 @@ def build_codex_spawn_command(
     If Codex needs to ask a follow-up question it should send a message via
     the inbox rather than printing to stdout.
     """
-    prompt = member.prompt
+    team_name = member.agent_id.split("@", 1)[1]
+    inbox_file = messaging.inbox_path(team_name, member.name)
+    lead_inbox_file = messaging.inbox_path(team_name, "team-lead")
+    wrapped_prompt = _CODEX_PROMPT_WRAPPER.format(
+        name=member.name,
+        team_name=team_name,
+        inbox_path=inbox_file,
+        lead_inbox_path=lead_inbox_file,
+        prompt=member.prompt,
+    )
     cmd = (
         f"cd {shlex.quote(member.cwd)} && "
-        f"{shlex.quote(codex_binary)} exec --full-auto "
-        f"{shlex.quote(prompt)}"
+        f"{shlex.quote(codex_binary)} exec --full-auto --skip-git-repo-check "
+        f"{shlex.quote(wrapped_prompt)}"
     )
     return cmd
 

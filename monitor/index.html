@@ -1,0 +1,1813 @@
+<!-- Claude Teams Monitor — Built for claude-teams-fork -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLAUDE TEAMS MONITOR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   CSS VARIABLES — MISSION CONTROL DESIGN SYSTEM
+   ============================================================ */
+:root {
+  --bg-deep:        #070b12;
+  --bg-surface:     #0d1520;
+  --bg-raised:      #111d2e;
+  --bg-hover:       #162235;
+  --border:         #1a2d45;
+  --border-bright:  #204060;
+
+  --cyan:           #00d4ff;
+  --cyan-dim:       rgba(0,212,255,0.15);
+  --cyan-glow:      0 0 12px rgba(0,212,255,0.6), 0 0 30px rgba(0,212,255,0.2);
+  --cyan-glow-sm:   0 0 6px rgba(0,212,255,0.4);
+
+  --green:          #00ff88;
+  --green-dim:      rgba(0,255,136,0.12);
+  --green-glow:     0 0 10px rgba(0,255,136,0.5);
+
+  --amber:          #ffaa00;
+  --amber-dim:      rgba(255,170,0,0.12);
+
+  --danger:         #ff3366;
+  --danger-dim:     rgba(255,51,102,0.12);
+
+  --purple:         #cc44ff;
+  --orange:         #ff8800;
+
+  --text-primary:   #e8f4ff;
+  --text-secondary: #5a7a9a;
+  --text-dim:       #2a4a6a;
+
+  --font-mono:      'JetBrains Mono', monospace;
+  --font-display:   'Orbitron', monospace;
+
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+
+  --transition: 0.2s ease;
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ============================================================
+   CRT SCANLINE OVERLAY
+   ============================================================ */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.08) 2px,
+    rgba(0,0,0,0.08) 4px
+  );
+  animation: scanlineScroll 8s linear infinite;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent 60%,
+    rgba(0,0,0,0.4) 100%
+  );
+}
+
+@keyframes scanlineScroll {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 40px; }
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* HEADER */
+#header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 100;
+}
+
+#header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), var(--green), transparent);
+  opacity: 0.6;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-shadow: var(--cyan-glow-sm);
+  letter-spacing: 0.12em;
+}
+
+/* Live badge — dynamic connection status */
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  padding: 3px 8px;
+  border-radius: 3px;
+  transition: all 0.4s;
+}
+
+.live-badge.live {
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid rgba(0,255,136,0.3);
+  animation: liveBlink 1.4s ease-in-out infinite;
+}
+
+.live-badge.reconnecting {
+  color: var(--amber);
+  background: var(--amber-dim);
+  border: 1px solid rgba(255,170,0,0.3);
+  animation: reconnectPulse 1s ease-in-out infinite;
+}
+
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+@keyframes reconnectPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(0.97); }
+}
+
+.header-stats {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+}
+
+.stat-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-shadow: var(--cyan-glow-sm);
+  transition: all 0.3s;
+}
+
+.stat-num.flash {
+  color: var(--green);
+  text-shadow: var(--green-glow);
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+}
+
+.header-clock {
+  font-family: var(--font-display);
+  font-size: 12px;
+  color: var(--text-primary);
+  letter-spacing: 0.1em;
+  text-align: right;
+}
+
+.clock-date {
+  font-size: 9px;
+  color: var(--text-secondary);
+  letter-spacing: 0.15em;
+}
+
+/* BODY */
+#body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 220px 1fr 340px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ============================================================
+   LEFT SIDEBAR
+   ============================================================ */
+#sidebar {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#sidebar::-webkit-scrollbar { width: 3px; }
+#sidebar::-webkit-scrollbar-track { background: transparent; }
+#sidebar::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+.sidebar-section {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-label {
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+.team-name {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-shadow: var(--cyan-glow-sm);
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.team-desc {
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.team-created {
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+/* BIG STAT NUMBERS */
+.quick-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.quick-stat {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.qs-number {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 4px;
+  transition: all 0.3s;
+}
+
+.qs-number.cyan   { color: var(--cyan); text-shadow: var(--cyan-glow-sm); }
+.qs-number.green  { color: var(--green); text-shadow: var(--green-glow); }
+.qs-number.amber  { color: var(--amber); }
+.qs-number.danger { color: var(--danger); }
+
+.qs-label {
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: var(--text-secondary);
+}
+
+/* TEAMS LIST */
+.teams-list { display: flex; flex-direction: column; gap: 6px; }
+
+.team-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--cyan);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.team-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--cyan);
+  box-shadow: var(--cyan-glow-sm);
+}
+
+.team-item-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: var(--green-glow);
+  animation: livePulse 2s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+.team-item-name {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.08em;
+}
+
+.team-item-count {
+  font-size: 9px;
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+/* CONTROL BUTTONS AREA (replaces simulate) */
+.control-area {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ctrl-btn {
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid var(--cyan);
+  border-radius: var(--radius-md);
+  color: var(--cyan);
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.ctrl-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--cyan-dim);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s;
+}
+
+.ctrl-btn:hover {
+  box-shadow: var(--cyan-glow);
+  text-shadow: var(--cyan-glow-sm);
+}
+
+.ctrl-btn:hover::before { transform: scaleX(1); }
+.ctrl-btn:active { transform: scale(0.97); }
+
+.ctrl-btn span { position: relative; z-index: 1; }
+
+.last-updated {
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+/* ============================================================
+   MAIN AGENTS GRID
+   ============================================================ */
+#main {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  background: var(--bg-deep);
+}
+
+#main::-webkit-scrollbar { width: 3px; }
+#main::-webkit-scrollbar-track { background: transparent; }
+#main::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  color: var(--text-secondary);
+}
+
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* AGENT CARDS GRID */
+#agents-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.agent-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.agent-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--card-accent, var(--cyan)), transparent);
+  opacity: 0.6;
+}
+
+.agent-card.active {
+  border-color: rgba(0,212,255,0.35);
+  box-shadow: 0 0 20px rgba(0,212,255,0.08), inset 0 0 30px rgba(0,212,255,0.03);
+}
+
+.agent-card.active.color-green  {
+  border-color: rgba(0,255,136,0.35);
+  box-shadow: 0 0 20px rgba(0,255,136,0.08), inset 0 0 30px rgba(0,255,136,0.03);
+}
+.agent-card.active.color-purple {
+  border-color: rgba(204,68,255,0.35);
+  box-shadow: 0 0 20px rgba(204,68,255,0.08), inset 0 0 30px rgba(204,68,255,0.03);
+}
+.agent-card.active.color-orange {
+  border-color: rgba(255,136,0,0.35);
+  box-shadow: 0 0 20px rgba(255,136,0,0.08), inset 0 0 30px rgba(255,136,0,0.03);
+}
+.agent-card.active.color-yellow {
+  border-color: rgba(255,170,0,0.35);
+  box-shadow: 0 0 20px rgba(255,170,0,0.08), inset 0 0 30px rgba(255,170,0,0.03);
+}
+.agent-card.active.color-pink {
+  border-color: rgba(255,102,170,0.35);
+  box-shadow: 0 0 20px rgba(255,102,170,0.08), inset 0 0 30px rgba(255,102,170,0.03);
+}
+.agent-card.active.color-red {
+  border-color: rgba(255,51,102,0.35);
+  box-shadow: 0 0 20px rgba(255,51,102,0.08), inset 0 0 30px rgba(255,51,102,0.03);
+}
+
+.agent-card:hover { transform: translateY(-1px); }
+
+/* card flash animation */
+.agent-card.flash-in {
+  animation: cardFlash 0.6s ease;
+}
+
+@keyframes cardFlash {
+  0%   { box-shadow: 0 0 40px rgba(0,255,136,0.5); border-color: var(--green); }
+  100% { }
+}
+
+/* CARD HEADER */
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.agent-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot.active {
+  background: var(--green);
+  box-shadow: var(--green-glow);
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+.status-dot.idle {
+  background: #2a4060;
+}
+
+@keyframes statusPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(0,255,136,0.8), 0 0 2px rgba(0,255,136,1); }
+  50%       { box-shadow: 0 0 14px rgba(0,255,136,0.4), 0 0 4px rgba(0,255,136,0.6); }
+}
+
+.agent-name {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.agent-name.color-blue   { color: var(--cyan);   text-shadow: var(--cyan-glow-sm); }
+.agent-name.color-cyan   { color: var(--cyan);   text-shadow: var(--cyan-glow-sm); }
+.agent-name.color-green  { color: var(--green);  text-shadow: var(--green-glow); }
+.agent-name.color-purple { color: var(--purple); text-shadow: 0 0 6px rgba(204,68,255,0.5); }
+.agent-name.color-orange { color: var(--orange); text-shadow: 0 0 6px rgba(255,136,0,0.4); }
+.agent-name.color-yellow { color: var(--amber);  text-shadow: 0 0 6px rgba(255,170,0,0.4); }
+.agent-name.color-pink   { color: #ff66aa;       text-shadow: 0 0 6px rgba(255,102,170,0.4); }
+.agent-name.color-red    { color: var(--danger);  text-shadow: 0 0 6px rgba(255,51,102,0.4); }
+
+.backend-badge {
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-family: var(--font-display);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.badge-opencode { background: rgba(0,212,255,0.2); color: var(--cyan); border: 1px solid rgba(0,212,255,0.4); }
+.badge-codex    { background: rgba(0,255,136,0.15); color: var(--green); border: 1px solid rgba(0,255,136,0.35); }
+.badge-claude   { background: rgba(204,68,255,0.15); color: var(--purple); border: 1px solid rgba(204,68,255,0.35); }
+
+/* WAVEFORM */
+.waveform-container {
+  height: 36px;
+  margin: 8px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.waveform-svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* CARD BODY FIELDS */
+.card-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+  min-height: 16px;
+}
+
+.field-icon {
+  font-size: 9px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  width: 12px;
+}
+
+.field-label {
+  font-size: 8px;
+  color: var(--text-secondary);
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+  min-width: 40px;
+}
+
+.field-value {
+  font-size: 10px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.field-value.task-active {
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+.field-value.task-idle {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.field-value.muted {
+  color: var(--text-secondary);
+  font-size: 9px;
+}
+
+.task-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-weight: 600;
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  border: 1px solid rgba(0,212,255,0.25);
+  flex-shrink: 0;
+}
+
+.prompt-block {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(0,0,0,0.3);
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--border-bright);
+  font-size: 9px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.join-time {
+  font-size: 8px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  text-align: right;
+}
+
+/* Empty state */
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 12px;
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: var(--text-secondary);
+}
+
+.empty-state-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
+/* ============================================================
+   RIGHT PANEL
+   ============================================================ */
+#right-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* TASK BOARD — top 55% */
+#task-board {
+  flex: 0 0 55%;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--bg-raised);
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--text-secondary);
+}
+
+.panel-badge {
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-family: var(--font-display);
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  margin-left: auto;
+}
+
+/* KANBAN */
+#kanban {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  overflow: hidden;
+}
+
+.kanban-col {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+
+.kanban-col:last-child { border-right: none; }
+
+.kanban-col-header {
+  padding: 7px 10px;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.col-title {
+  font-family: var(--font-display);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+}
+
+.col-count {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  margin-left: auto;
+  color: var(--text-secondary);
+}
+
+.col-title.pending   { color: var(--amber); }
+.col-title.progress  { color: var(--cyan); }
+.col-title.completed { color: var(--green); }
+
+.kanban-cards {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kanban-cards::-webkit-scrollbar { width: 2px; }
+.kanban-cards::-webkit-scrollbar-thumb { background: var(--border); }
+
+.task-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid;
+  padding: 8px 9px;
+  transition: all 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.task-card:hover {
+  background: var(--bg-hover);
+  transform: translateX(2px);
+}
+
+.task-card.status-pending    { border-left-color: var(--amber); }
+.task-card.status-in_progress{ border-left-color: var(--cyan); }
+.task-card.status-completed  { border-left-color: var(--green); opacity: 0.7; }
+
+.task-card.flash-status {
+  animation: taskFlash 0.5s ease;
+}
+
+@keyframes taskFlash {
+  0%   { background: rgba(0,212,255,0.2); }
+  100% { background: var(--bg-raised); }
+}
+
+.task-id-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 2px;
+  font-family: var(--font-display);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+}
+
+.task-card.status-pending     .task-id-badge { background: var(--amber-dim); color: var(--amber); }
+.task-card.status-in_progress .task-id-badge { background: var(--cyan-dim); color: var(--cyan); }
+.task-card.status-completed   .task-id-badge { background: var(--green-dim); color: var(--green); }
+
+.task-subject {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+
+.task-desc {
+  font-size: 8px;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.task-owner-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.owner-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.owner-name {
+  font-size: 8px;
+  color: var(--text-secondary);
+}
+
+.task-blocked {
+  font-size: 7px;
+  color: var(--amber);
+  margin-top: 3px;
+  letter-spacing: 0.05em;
+}
+
+/* ============================================================
+   MESSAGE FEED
+   ============================================================ */
+#message-feed {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#feed-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+#feed-list::-webkit-scrollbar { width: 2px; }
+#feed-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+.msg-entry {
+  padding: 6px 9px;
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--border);
+  background: var(--bg-raised);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.msg-entry:hover {
+  background: var(--bg-hover);
+  border-left-color: var(--cyan);
+}
+
+.msg-entry.unread {
+  background: rgba(0,212,255,0.04);
+}
+
+.msg-entry.flash-new {
+  animation: msgFlash 0.8s ease;
+}
+
+@keyframes msgFlash {
+  0%   { background: rgba(0,255,136,0.25); border-left-color: var(--green); }
+  60%  { background: rgba(0,255,136,0.08); }
+  100% { background: rgba(0,212,255,0.04); }
+}
+
+.msg-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.msg-time {
+  font-size: 8px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  min-width: 38px;
+}
+
+.msg-direction {
+  font-size: 9px;
+  color: var(--text-secondary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msg-from { font-weight: 600; }
+.msg-arrow { color: var(--text-dim); margin: 0 2px; }
+
+.unread-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: var(--cyan-glow-sm);
+  flex-shrink: 0;
+}
+
+.unread-dot.hidden { background: transparent; box-shadow: none; }
+
+.msg-preview {
+  font-size: 9px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.msg-full {
+  display: none;
+  font-size: 9px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin-top: 5px;
+  padding: 6px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 3px;
+}
+
+.msg-entry.expanded .msg-preview { display: none; }
+.msg-entry.expanded .msg-full    { display: block; }
+
+/* ============================================================
+   AGENT COLORS (CSS variables for card accent)
+   ============================================================ */
+.agent-card.color-blue   { --card-accent: var(--cyan); }
+.agent-card.color-cyan   { --card-accent: var(--cyan); }
+.agent-card.color-green  { --card-accent: var(--green); }
+.agent-card.color-purple { --card-accent: var(--purple); }
+.agent-card.color-orange { --card-accent: var(--orange); }
+.agent-card.color-yellow { --card-accent: var(--amber); }
+.agent-card.color-pink   { --card-accent: #ff66aa; }
+.agent-card.color-red    { --card-accent: var(--danger); }
+
+/* ============================================================
+   NOISE TEXTURE OVERLAY
+   ============================================================ */
+#noise-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9997;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+}
+
+/* ============================================================
+   GRID BACKGROUND
+   ============================================================ */
+#main {
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-color: var(--bg-deep);
+  background-attachment: local;
+}
+
+/* ============================================================
+   RESPONSIVE SCROLLBARS + MISC
+   ============================================================ */
+.divider-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 12px 0;
+}
+
+/* Notification toast */
+#toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10000;
+  padding: 10px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--green);
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: var(--green);
+  box-shadow: var(--green-glow);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s;
+  pointer-events: none;
+}
+
+#toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+</style>
+</head>
+
+<body>
+<div id="noise-overlay"></div>
+
+<div id="app">
+
+  <!-- ======= HEADER ======= -->
+  <header id="header">
+    <div class="header-brand">
+      <span class="brand-title">CLAUDE TEAMS MONITOR</span>
+      <span class="live-badge live" id="live-indicator">● LIVE</span>
+    </div>
+
+    <div class="header-stats">
+      <div class="stat-item">
+        <span class="stat-num" id="stat-agents">0</span>
+        <span class="stat-label">AGENTS ACTIVE</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="stat-tasks">0</span>
+        <span class="stat-label">TASKS IN PROGRESS</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="stat-messages">0</span>
+        <span class="stat-label">MESSAGES</span>
+      </div>
+    </div>
+
+    <div class="header-clock">
+      <div id="clock-time" style="font-size:14px;font-weight:600;"></div>
+      <div id="clock-date" class="clock-date"></div>
+    </div>
+  </header>
+
+  <!-- ======= BODY ======= -->
+  <div id="body">
+
+    <!-- ======= SIDEBAR ======= -->
+    <aside id="sidebar">
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">▸ ACTIVE TEAM</div>
+        <div class="team-name" id="sb-team-name">—</div>
+        <div class="team-desc" id="sb-team-desc">Waiting for team data...</div>
+        <div class="team-created" id="sb-team-created"></div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">▸ QUICK STATS</div>
+        <div class="quick-stats">
+          <div class="quick-stat">
+            <div class="qs-number cyan" id="qs-members">0</div>
+            <div class="qs-label">MEMBERS</div>
+          </div>
+          <div class="quick-stat">
+            <div class="qs-number green" id="qs-active">0</div>
+            <div class="qs-label">ACTIVE</div>
+          </div>
+          <div class="quick-stat">
+            <div class="qs-number amber" id="qs-pending">0</div>
+            <div class="qs-label">PENDING</div>
+          </div>
+          <div class="quick-stat">
+            <div class="qs-number danger" id="qs-blocked">0</div>
+            <div class="qs-label">BLOCKED</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">▸ TEAMS</div>
+        <div class="teams-list" id="teams-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <div class="control-area">
+        <button class="ctrl-btn" onclick="refreshNow()">
+          <span>⟳ REFRESH NOW</span>
+        </button>
+        <div class="last-updated" id="last-updated">Last updated: —</div>
+      </div>
+
+    </aside>
+
+    <!-- ======= MAIN AGENTS ======= -->
+    <main id="main">
+      <div class="section-header">
+        <span class="section-title">▸ AGENT NODES</span>
+        <span class="section-line"></span>
+        <span style="font-family:var(--font-display);font-size:8px;color:var(--text-dim);" id="agent-count-label">0 AGENTS</span>
+      </div>
+
+      <div id="agents-grid">
+        <!-- Rendered by JS -->
+      </div>
+    </main>
+
+    <!-- ======= RIGHT PANEL ======= -->
+    <div id="right-panel">
+
+      <!-- TASK BOARD -->
+      <div id="task-board">
+        <div class="panel-header">
+          <span class="panel-title">▸ TASK BOARD</span>
+          <span class="panel-badge" id="task-total-badge">0 TASKS</span>
+        </div>
+
+        <div id="kanban">
+          <div class="kanban-col" id="col-pending">
+            <div class="kanban-col-header">
+              <span class="col-title pending">PENDING</span>
+              <span class="col-count" id="count-pending">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-pending"></div>
+          </div>
+
+          <div class="kanban-col" id="col-progress">
+            <div class="kanban-col-header">
+              <span class="col-title progress">IN PROGRESS</span>
+              <span class="col-count" id="count-progress">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-progress"></div>
+          </div>
+
+          <div class="kanban-col" id="col-completed">
+            <div class="kanban-col-header">
+              <span class="col-title completed">COMPLETED</span>
+              <span class="col-count" id="count-completed">0</span>
+            </div>
+            <div class="kanban-cards" id="cards-completed"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MESSAGE FEED -->
+      <div id="message-feed">
+        <div class="panel-header">
+          <span class="panel-title">▸ MESSAGE FEED</span>
+          <span class="panel-badge" id="msg-total-badge">0 MESSAGES</span>
+        </div>
+        <div id="feed-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   CONSTANTS & HELPERS
+   ============================================================ */
+
+const S = 1000;
+const M = 60 * S;
+
+// Color map: backend color name → CSS hex
+const COLOR_MAP = {
+  blue:   '#00d4ff',
+  cyan:   '#00d4ff',
+  green:  '#00ff88',
+  yellow: '#ffaa00',
+  purple: '#cc44ff',
+  orange: '#ff8800',
+  pink:   '#ff66aa',
+  red:    '#ff3366',
+};
+
+// Fallback color for unknowns
+const DEFAULT_COLOR = '#5a7a9a';
+
+function colorHex(colorName) {
+  return COLOR_MAP[colorName] || DEFAULT_COLOR;
+}
+
+function relTime(ts) {
+  // ts can be ms (number) or ISO string
+  let ms;
+  if (typeof ts === 'string') {
+    ms = new Date(ts).getTime();
+  } else if (ts > 1e12) {
+    ms = ts; // already milliseconds
+  } else {
+    ms = ts * 1000; // unix seconds float → ms
+  }
+  const diff = Date.now() - ms;
+  if (diff < 5 * S) return 'just now';
+  if (diff < 60 * S) return `${Math.floor(diff / S)}s ago`;
+  if (diff < 60 * M) return `${Math.floor(diff / M)}m ago`;
+  const h = Math.floor(diff / (60 * M));
+  return `${h}h ago`;
+}
+
+function truncate(str, n) {
+  if (!str) return '';
+  return str.length > n ? str.slice(0, n) + '…' : str;
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+/* ============================================================
+   WAVEFORM ANIMATION
+   ============================================================ */
+
+let wavePhases = {};
+let waveAnimId = null;
+// agentColorsByName: name → color hex (populated by renderState)
+let agentColorsByName = {};
+// isActiveByName: name → bool
+let isActiveByName = {};
+
+function createWaveformSVG(agentName, isActive, colorHexVal) {
+  const id = 'wave-' + agentName;
+  const col = colorHexVal || '#00d4ff';
+  const svg = `<svg class="waveform-svg" id="${id}" viewBox="0 0 280 36" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="wg-${agentName}" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%"   stop-color="${col}" stop-opacity="0"/>
+        <stop offset="30%"  stop-color="${col}" stop-opacity="0.8"/>
+        <stop offset="70%"  stop-color="${col}" stop-opacity="0.8"/>
+        <stop offset="100%" stop-color="${col}" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path id="wavepath-${agentName}" d="" stroke="url(#wg-${agentName})" stroke-width="1.5" fill="none" opacity="${isActive ? '1' : '0.2'}"/>
+  </svg>`;
+  if (!(agentName in wavePhases)) wavePhases[agentName] = Math.random() * Math.PI * 2;
+  return svg;
+}
+
+function updateWaveforms(timestamp) {
+  for (const [name, isActive] of Object.entries(isActiveByName)) {
+    const el = document.getElementById('wavepath-' + name);
+    if (!el) continue;
+
+    if (!isActive) {
+      const y = 18;
+      let d = `M 0 ${y}`;
+      for (let x = 0; x <= 280; x += 10) d += ` L ${x} ${y + (Math.random() - 0.5) * 1.2}`;
+      el.setAttribute('d', d);
+      continue;
+    }
+
+    wavePhases[name] = (wavePhases[name] || 0) + 0.04;
+    const phase = wavePhases[name];
+    const amp   = 8 + Math.sin(phase * 0.3) * 3;
+    const freq  = 0.04 + Math.sin(phase * 0.1) * 0.01;
+
+    let d = `M 0 18`;
+    for (let x = 0; x <= 280; x += 3) {
+      const y = 18 - amp * Math.sin(freq * x * 6 + phase);
+      d += ` L ${x} ${y}`;
+    }
+    el.setAttribute('d', d);
+  }
+
+  waveAnimId = requestAnimationFrame(updateWaveforms);
+}
+
+/* ============================================================
+   RENDER: AGENT CARD
+   ============================================================ */
+
+function renderAgentCard(member, ownerTaskMap) {
+  // member is a TeammateMember (has .prompt)
+  const colorName  = member.color || 'blue';
+  const col        = colorHex(colorName);
+  const isActive   = !!member.isActive;
+  const joinedAgo  = relTime(member.joinedAt);
+  const cwd        = member.cwd || '';
+  const truncCwd   = cwd.length > 28 ? '…' + cwd.slice(-28) : cwd;
+  const backendType = (member.backendType || 'opencode').toLowerCase();
+
+  const backendClass = {
+    opencode: 'badge-opencode',
+    codex:    'badge-codex',
+    claude:   'badge-claude',
+  }[backendType] || 'badge-opencode';
+
+  const backendLabel = {
+    opencode: 'OPENCODE',
+    codex:    'CODEX',
+    claude:   'CLAUDE',
+  }[backendType] || backendType.toUpperCase();
+
+  // Find the task this agent owns that is in_progress
+  const ownedTask = ownerTaskMap[member.name] || null;
+  const taskHTML = ownedTask
+    ? `<span class="task-badge">#${ownedTask.id}</span> <span class="field-value task-active">${truncate(ownedTask.subject, 22)}</span>`
+    : `<span class="field-value task-idle">— IDLE —</span>`;
+
+  const paneLabel = member.tmuxPaneId || '—';
+  const promptText = member.prompt ? truncate(member.prompt, 100) : '(no prompt)';
+
+  return `
+<div class="agent-card ${isActive ? 'active' : ''} color-${colorName}" id="card-${member.name}">
+  <div class="card-header">
+    <div class="agent-name-row">
+      <span class="status-dot ${isActive ? 'active' : 'idle'}"></span>
+      <span class="agent-name color-${colorName}">${member.name.toUpperCase()}</span>
+    </div>
+    <span class="backend-badge ${backendClass}">${backendLabel}</span>
+  </div>
+
+  <div class="waveform-container">
+    ${createWaveformSVG(member.name, isActive, col)}
+  </div>
+
+  <div class="card-field">
+    <span class="field-icon">◈</span>
+    <span class="field-label">TASK</span>
+    <span style="display:flex;align-items:center;gap:5px;overflow:hidden;">${taskHTML}</span>
+  </div>
+
+  <div class="card-field">
+    <span class="field-icon">◉</span>
+    <span class="field-label">MODEL</span>
+    <span class="field-value muted">${member.model || '—'}</span>
+  </div>
+
+  <div class="card-field">
+    <span class="field-icon">◧</span>
+    <span class="field-label">PANE</span>
+    <span class="field-value muted">${paneLabel}</span>
+    <span style="margin-left:auto;font-size:8px;color:var(--text-dim);">${isActive ? '▶ RUNNING' : '■ IDLE'}</span>
+  </div>
+
+  <div class="card-field" title="${cwd}">
+    <span class="field-icon">◫</span>
+    <span class="field-label">CWD</span>
+    <span class="field-value muted">${truncCwd || '—'}</span>
+  </div>
+
+  <div class="prompt-block">${promptText}</div>
+
+  <div class="join-time">⧖ joined ${joinedAgo}</div>
+</div>`;
+}
+
+/* ============================================================
+   RENDER: TASK CARD
+   ============================================================ */
+
+function ownerColorHex(ownerName) {
+  if (!ownerName) return '#2a4a6a';
+  return agentColorsByName[ownerName] || DEFAULT_COLOR;
+}
+
+function renderTaskCard(task) {
+  const blockedBy = task.blockedBy || [];
+  const blockedText = blockedBy.length
+    ? `⚠ blocked by: ${blockedBy.map(id => '#' + id).join(', ')}`
+    : '';
+
+  return `
+<div class="task-card status-${task.status}" id="taskcard-${task.id}">
+  <div class="task-id-badge">#${task.id}</div>
+  <div class="task-subject">${task.subject || '(no subject)'}</div>
+  <div class="task-desc">${task.description || ''}</div>
+  <div class="task-owner-row">
+    <span class="owner-dot" style="background:${ownerColorHex(task.owner)}"></span>
+    <span class="owner-name">${task.owner || 'unassigned'}</span>
+  </div>
+  ${blockedText ? `<div class="task-blocked">${blockedText}</div>` : ''}
+</div>`;
+}
+
+/* ============================================================
+   RENDER: MESSAGE FEED
+   ============================================================ */
+
+let renderedMessages = []; // flat sorted array from last renderState
+
+function renderMessageFeed(messages) {
+  renderedMessages = messages;
+  const list = document.getElementById('feed-list');
+
+  list.innerHTML = messages.map((msg, i) => {
+    const sColor = agentColorsByName[msg.from] || DEFAULT_COLOR;
+    const toName = msg.to || '?';
+    const toColor = agentColorsByName[toName] || DEFAULT_COLOR;
+    const toLabel = toName === 'all'
+      ? `<span style="color:var(--amber)">ALL</span>`
+      : `<span style="color:${toColor}">${toName}</span>`;
+    const fromLabel = `<span class="msg-from" style="color:${sColor}">${msg.from}</span>`;
+    const preview   = truncate(msg.text, 75);
+    const timeStr   = relTime(msg.timestamp);
+
+    return `
+<div class="msg-entry ${msg.read ? '' : 'unread'}" id="msg-${i}" style="border-left-color:${sColor}"
+     onclick="toggleMsg(${i})">
+  <div class="msg-header">
+    <span class="msg-time">${timeStr}</span>
+    <span class="msg-direction">${fromLabel}<span class="msg-arrow"> → </span>${toLabel}</span>
+    <span class="unread-dot ${msg.read ? 'hidden' : ''}"></span>
+  </div>
+  <div class="msg-preview">${preview}</div>
+  <div class="msg-full">${msg.text}${msg.summary ? `<div style="margin-top:4px;font-size:8px;color:var(--text-secondary);letter-spacing:0.1em;">[ ${msg.summary} ]</div>` : ''}</div>
+</div>`;
+  }).join('');
+
+  list.scrollTop = list.scrollHeight;
+  document.getElementById('msg-total-badge').textContent = messages.length + ' MESSAGES';
+}
+
+function toggleMsg(i) {
+  const el = document.getElementById('msg-' + i);
+  if (!el) return;
+  el.classList.toggle('expanded');
+  if (renderedMessages[i] && !renderedMessages[i].read) {
+    renderedMessages[i].read = true;
+    el.classList.remove('unread');
+    const dot = el.querySelector('.unread-dot');
+    if (dot) dot.classList.add('hidden');
+  }
+}
+
+/* ============================================================
+   HEADER STATS
+   ============================================================ */
+
+function flashStat(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const old = el.textContent;
+  el.textContent = val;
+  if (old !== String(val)) {
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 500);
+  }
+}
+
+/* ============================================================
+   CLOCK
+   ============================================================ */
+
+function updateClock() {
+  const now  = new Date();
+  const time = now.toTimeString().slice(0, 8);
+  const date = now.toDateString();
+  document.getElementById('clock-time').textContent = time;
+  document.getElementById('clock-date').textContent = date.toUpperCase();
+}
+
+/* ============================================================
+   CONNECTION STATUS
+   ============================================================ */
+
+function showConnectionStatus(status) {
+  const el = document.getElementById('live-indicator');
+  if (!el) return;
+  if (status === 'connected') {
+    el.textContent = '● LIVE';
+    el.className = 'live-badge live';
+  } else {
+    el.textContent = '◌ RECONNECTING...';
+    el.className = 'live-badge reconnecting';
+  }
+}
+
+/* ============================================================
+   RENDER STATE — main entry point for SSE data
+   ============================================================ */
+
+function renderState(state) {
+  const teams = (state && state.teams) || [];
+
+  // ── Update "last updated" timestamp ──────────────────────
+  const nowStr = new Date().toTimeString().slice(0, 8);
+  const luEl = document.getElementById('last-updated');
+  if (luEl) luEl.textContent = 'Last updated: ' + nowStr;
+
+  // ── Collect all teammate members across all teams ────────
+  // LeadMember has no .prompt field — skip in agent grid
+  const allTeammates  = [];
+  const allTasks      = [];
+  let   allMessages   = [];
+
+  // Rebuild color map
+  agentColorsByName = {};
+  isActiveByName    = {};
+
+  for (const team of teams) {
+    const cfg = team.config || {};
+    const members = cfg.members || [];
+    for (const m of members) {
+      // Store color for every member (including lead) for message coloring
+      agentColorsByName[m.name] = colorHex(m.color || 'blue');
+      if (typeof m.prompt === 'string') {
+        // TeammateMember
+        isActiveByName[m.name] = !!m.isActive;
+        allTeammates.push(m);
+      }
+    }
+
+    const tasks = team.tasks || [];
+    for (const t of tasks) allTasks.push(t);
+
+    // Flatten inboxes
+    const inboxes = team.inboxes || {};
+    for (const [agentName, msgs] of Object.entries(inboxes)) {
+      for (const msg of msgs) {
+        // Normalise "to" field from inbox key
+        allMessages.push({
+          from:      msg.from,
+          to:        agentName,
+          text:      msg.text || '',
+          timestamp: msg.timestamp,
+          read:      !!msg.read,
+          summary:   msg.summary || '',
+        });
+      }
+    }
+  }
+
+  // Deduplicate messages by (from + text + timestamp)
+  const seen = new Set();
+  allMessages = allMessages.filter(msg => {
+    const key = `${msg.from}|${msg.text}|${msg.timestamp}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  // Sort messages oldest-first
+  allMessages.sort((a, b) => {
+    const ta = typeof a.timestamp === 'string' ? new Date(a.timestamp).getTime() : (a.timestamp > 1e12 ? a.timestamp : a.timestamp * 1000);
+    const tb = typeof b.timestamp === 'string' ? new Date(b.timestamp).getTime() : (b.timestamp > 1e12 ? b.timestamp : b.timestamp * 1000);
+    return ta - tb;
+  });
+
+  // ── Build owner→task map (in_progress tasks owned by agent) ──
+  const ownerTaskMap = {};
+  for (const task of allTasks) {
+    if (task.owner && task.status === 'in_progress') {
+      ownerTaskMap[task.owner] = task;
+    }
+  }
+
+  // ── Sidebar: team info (show first team) ─────────────────
+  if (teams.length > 0) {
+    const firstTeam = teams[0];
+    const cfg = firstTeam.config || {};
+    document.getElementById('sb-team-name').textContent    = cfg.name || '—';
+    document.getElementById('sb-team-desc').textContent    = cfg.description || '—';
+    document.getElementById('sb-team-created').textContent =
+      cfg.createdAt ? 'Created ' + relTime(cfg.createdAt) : '';
+  } else {
+    document.getElementById('sb-team-name').textContent    = '—';
+    document.getElementById('sb-team-desc').textContent    = 'No active teams';
+    document.getElementById('sb-team-created').textContent = '';
+  }
+
+  // ── Sidebar: teams list ───────────────────────────────────
+  const teamsList = document.getElementById('teams-list');
+  if (teams.length === 0) {
+    teamsList.innerHTML = `<div style="font-size:9px;color:var(--text-dim);letter-spacing:0.08em;">No teams yet</div>`;
+  } else {
+    teamsList.innerHTML = teams.map(team => {
+      const cfg = team.config || {};
+      const memberCount = (cfg.members || []).filter(m => typeof m.prompt === 'string').length;
+      return `
+<div class="team-item">
+  <span class="team-item-dot"></span>
+  <span class="team-item-name">${cfg.name || '?'}</span>
+  <span class="team-item-count">${memberCount} agent${memberCount !== 1 ? 's' : ''}</span>
+</div>`;
+    }).join('');
+  }
+
+  // ── Sidebar: quick stats ──────────────────────────────────
+  const activeCount  = allTeammates.filter(m => m.isActive).length;
+  const pendingCount = allTasks.filter(t => t.status === 'pending').length;
+  const blockedCount = allTasks.filter(t => (t.blockedBy || []).length > 0 && t.status !== 'completed').length;
+
+  document.getElementById('qs-members').textContent = allTeammates.length;
+  document.getElementById('qs-active').textContent  = activeCount;
+  document.getElementById('qs-pending').textContent = pendingCount;
+  document.getElementById('qs-blocked').textContent = blockedCount;
+
+  // ── Header stats ──────────────────────────────────────────
+  const inProgressCount = allTasks.filter(t => t.status === 'in_progress').length;
+  flashStat('stat-agents',   activeCount);
+  flashStat('stat-tasks',    inProgressCount);
+  flashStat('stat-messages', allMessages.length);
+
+  // ── Agent count label ─────────────────────────────────────
+  document.getElementById('agent-count-label').textContent =
+    allTeammates.length + ' AGENT' + (allTeammates.length !== 1 ? 'S' : '');
+
+  // ── Agent cards ───────────────────────────────────────────
+  const grid = document.getElementById('agents-grid');
+  if (allTeammates.length === 0) {
+    grid.innerHTML = `
+<div class="empty-state">
+  <div class="empty-state-title">NO ACTIVE TEAMS</div>
+  <div class="empty-state-sub">Waiting for claude-teams to create a team...</div>
+</div>`;
+  } else {
+    grid.innerHTML = allTeammates.map(m => renderAgentCard(m, ownerTaskMap)).join('');
+  }
+
+  // Restart waveform animation to pick up new agents
+  if (waveAnimId) cancelAnimationFrame(waveAnimId);
+  waveAnimId = requestAnimationFrame(updateWaveforms);
+
+  // ── Task board ────────────────────────────────────────────
+  const pending    = allTasks.filter(t => t.status === 'pending');
+  const inprogress = allTasks.filter(t => t.status === 'in_progress');
+  const completed  = allTasks.filter(t => t.status === 'completed');
+
+  document.getElementById('cards-pending').innerHTML   = pending.map(renderTaskCard).join('');
+  document.getElementById('cards-progress').innerHTML  = inprogress.map(renderTaskCard).join('');
+  document.getElementById('cards-completed').innerHTML = completed.map(renderTaskCard).join('');
+
+  document.getElementById('count-pending').textContent   = pending.length;
+  document.getElementById('count-progress').textContent  = inprogress.length;
+  document.getElementById('count-completed').textContent = completed.length;
+  document.getElementById('task-total-badge').textContent = allTasks.length + ' TASKS';
+
+  // ── Message feed ──────────────────────────────────────────
+  renderMessageFeed(allMessages);
+}
+
+/* ============================================================
+   REFRESH NOW BUTTON
+   ============================================================ */
+
+function refreshNow() {
+  fetch('/api/state')
+    .then(r => r.json())
+    .then(state => {
+      renderState(state);
+      showToast('⟳ STATE REFRESHED');
+    })
+    .catch(() => showToast('⚠ FETCH FAILED'));
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+
+function init() {
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Refresh relative timestamps every 30s
+  setInterval(() => {
+    // Re-render messages to update "Xm ago" labels
+    if (renderedMessages.length > 0) {
+      renderMessageFeed(renderedMessages);
+    }
+  }, 30000);
+
+  // Start waveform animation loop
+  requestAnimationFrame(updateWaveforms);
+
+  // Show initial empty state
+  renderState({ teams: [] });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+// ─── SSE data layer ───────────────────────────────────────────────────────
+const SSE_URL = 'http://localhost:7373/api/events';
+let es = null;
+let reconnectDelay = 2000;
+
+function connectSSE() {
+  es = new EventSource(SSE_URL);
+
+  es.addEventListener('state', (e) => {
+    reconnectDelay = 2000;
+    const state = JSON.parse(e.data);
+    renderState(state);
+  });
+
+  es.onerror = () => {
+    es.close();
+    setTimeout(connectSSE, reconnectDelay);
+    reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+    showConnectionStatus('disconnected');
+  };
+
+  es.onopen = () => showConnectionStatus('connected');
+}
+
+connectSSE();
+</script>
+</body>
+</html>

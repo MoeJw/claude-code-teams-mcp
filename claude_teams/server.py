@@ -12,7 +12,7 @@ from fastmcp.exceptions import ToolError
 from fastmcp.server.lifespan import lifespan
 from fastmcp.server.middleware import Middleware
 
-from claude_teams import messaging, opencode_client, tasks, teams
+from claude_teams import messaging, monitor_server, opencode_client, tasks, teams
 from claude_teams.models import (
     COLOR_PALETTE,
     InboxMessage,
@@ -202,7 +202,33 @@ async def app_lifespan(server):
             "client_version": "unknown",
         }
     )
-    yield _lifespan_state
+
+    # Start the web monitor (best-effort — never block the MCP if it fails)
+    monitor_port: int | None = None
+    if os.environ.get("CLAUDE_TEAMS_MONITOR_DISABLE", "").lower() not in (
+        "1",
+        "true",
+        "yes",
+    ):
+        try:
+            monitor_port = monitor_server.start()
+            logger.info(
+                "Claude Teams Monitor running at http://localhost:%d", monitor_port
+            )
+        except OSError:
+            logger.warning(
+                "Claude Teams Monitor could not start (port %d in use). "
+                "Set CLAUDE_TEAMS_MONITOR_PORT to use a different port, "
+                "or CLAUDE_TEAMS_MONITOR_DISABLE=1 to suppress.",
+                monitor_server.MONITOR_PORT,
+            )
+
+    _lifespan_state["monitor_port"] = monitor_port
+
+    try:
+        yield _lifespan_state
+    finally:
+        monitor_server.stop()
 
 
 class HarnessDetectionMiddleware(Middleware):
