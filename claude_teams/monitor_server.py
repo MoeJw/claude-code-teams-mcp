@@ -180,11 +180,11 @@ def _watcher_thread(stop_event: threading.Event) -> None:
 
 
 def _get_html() -> bytes:
-    """Return the dashboard HTML. Looks for monitor/index.html next to this file."""
+    """Return the dashboard HTML."""
     here = Path(__file__).parent
     candidates = [
-        here.parent / "monitor" / "index.html",  # in the fork repo
-        here / "monitor" / "index.html",
+        here / "monitor" / "index.html",  # installed inside package
+        here.parent / "monitor" / "index.html",  # running from fork repo root
     ]
     for p in candidates:
         if p.exists():
