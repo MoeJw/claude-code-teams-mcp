@@ -175,8 +175,9 @@ def build_codex_spawn_command(
         lead_inbox_path=lead_inbox_file,
         prompt=member.prompt,
     )
+    teams_dir = str(messaging.TEAMS_DIR)
     cmd = (
-        f"cd {shlex.quote(member.cwd)} && "
+        f"cd {shlex.quote(teams_dir)} && "
         f"{shlex.quote(codex_binary)} exec --full-auto --skip-git-repo-check "
         f"{shlex.quote(wrapped_prompt)}"
     )
@@ -266,6 +267,7 @@ def spawn_teammate(
         member_added = True
 
         messaging.ensure_inbox(team_name, name, base_dir)
+        messaging.ensure_inbox(team_name, "team-lead", base_dir)
         initial_msg = InboxMessage(
             from_="team-lead",
             text=prompt,
